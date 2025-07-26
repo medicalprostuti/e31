@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "Synonym for Polite is -",
+          options: {
+            a: "Rich",
+            b: "Courteous",
+            c: "Kindness",
+            d: "Brilliant",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Polite' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Polite:</b> এর অর্থ হলো বিনয়ী, ভদ্র বা শিষ্ট।</li><li><b>Rich:</b> এর অর্থ হলো ধনী।</li><li><b>Courteous:</b> এর অর্থ হলো বিনয়ী, ভদ্র বা শিষ্ট। এটি 'Polite' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Kindness:</b> এর অর্থ হলো দয়া বা সহানুভূতি। এটি একটি Noun, আর 'Polite' একটি Adjective।</li><li><b>Brilliant:</b> এর অর্থ হলো উজ্জ্বল বা মেধাবী।</li></ul></p><p>সুতরাং, 'Polite' এর সমার্থক শব্দ হলো 'Courteous' (বিনয়ী)।</p>",
+        },
+        {
+          id: 2,
+          question: "Antonym of 'Modern' is -",
+          options: {
+            a: "Outdated",
+            b: "Ancient",
+            c: "Past",
+            d: "Medieval",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Modern' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Modern:</b> এর অর্থ হলো আধুনিক, বর্তমান কালের বা সাম্প্রতিক।</li><li><b>Outdated:</b> এর অর্থ হলো সেকেলে বা অপ্রচলিত। এটি 'Modern' এর একটি কাছাকাছি বিপরীত শব্দ।</li><li><b>Ancient:</b> এর অর্থ হলো প্রাচীন বা পুরনো। এটি 'Modern' এর সরাসরি এবং সবচেয়ে উপযুক্ত বিপরীত শব্দ।</li><li><b>Past:</b> এর অর্থ হলো অতীত। এটি একটি সময়কাল, সরাসরি গুণবাচক শব্দ নয়।</li><li><b>Medieval:</b> এর অর্থ হলো মধ্যযুগীয়। এটি একটি নির্দিষ্ট ঐতিহাসিক সময়কালকে বোঝায়।</li></ul></p><p>সুতরাং, 'Modern' এর বিপরীত শব্দ হলো 'Ancient' (প্রাচীন)।</p>",
+        },
+        {
+          id: 3,
+          question: "An antonym of 'Native' is -",
+          options: {
+            a: "Real",
+            b: "Alien",
+            c: "Congenial",
+            d: "Inborn",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Native' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Native:</b> এর অর্থ হলো স্থানীয়, আদিবাসী বা জন্মগত।</li><li><b>Real:</b> এর অর্থ হলো বাস্তব বা আসল।</li><li><b>Alien:</b> এর অর্থ হলো বিদেশী, ভিন্নদেশী বা অপরিচিত। এটি 'Native' (স্থানীয়) এর সরাসরি বিপরীত।</li><li><b>Congenial:</b> এর অর্থ হলো সহানুভূতিশীল বা অনুকূল।</li><li><b>Inborn:</b> এর অর্থ হলো জন্মগত বা সহজাত। এটি 'Native' এর একটি Synonym।</li></ul></p><p>সুতরাং, 'Native' এর বিপরীত শব্দ হলো 'Alien' (বিদেশী)।</p>",
+        },
+        {
+          id: 4,
+          question: "Which of the following pairs contains correct antonyms?",
+          options: {
+            a: "Oblivious: Unconscious",
+            b: "Perilous: Comfortable",
+            c: "Laconic: Terse",
+            d: "Nebulous: Imprecise",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক Antonym (বিপরীত শব্দ) জোড়াটি খুঁজে বের করতে বলা হয়েছে।</p><p><ul><li><b>(A) Oblivious: Unconscious:</b></li><ul><li><b>Oblivious:</b> এর অর্থ হলো অসচেতন বা বেখেয়াল।</li><li><b>Unconscious:</b> এর অর্থ হলো অচেতন বা সংজ্ঞাহীন।</li><li>এই দুটি শব্দ Synonym বা কাছাকাছি অর্থ প্রকাশ করে, Antonym নয়।</li></ul><li><b>(B) Perilous: Comfortable:</b></li><ul><li><b>Perilous:</b> এর অর্থ হলো বিপদজনক বা ঝুঁকিপূর্ণ।</li><li><b>Comfortable:</b> এর অর্থ হলো আরামদায়ক বা নিরাপদ।</li><li>এই দুটি শব্দ Antonym বা বিপরীত অর্থ প্রকাশ করে। 'বিপদজনক' এর বিপরীত 'আরামদায়ক' বা 'নিরাপদ'।</li></ul><li><b>(C) Laconic: Terse:</b></li><ul><li><b>Laconic:</b> এর অর্থ হলো স্বল্পভাষী বা সংক্ষেপে কথা বলা।</li><li><b>Terse:</b> এর অর্থ হলো সংক্ষিপ্ত বা সারগর্ভ।</li><li>এই দুটি শব্দ Synonym বা সমার্থক।</li></ul><li><b>(D) Nebulous: Imprecise:</b></li><ul><li><b>Nebulous:</b> এর অর্থ হলো অস্পষ্ট বা ঝাপসা।</li><li><b>Imprecise:</b> এর অর্থ হলো অনিশ্চিত বা অস্পষ্ট।</li><li>এই দুটি শব্দ Synonym বা সমার্থক।</li></ul></ul></p><p>সুতরাং, সঠিক Antonym জোড়া হলো 'Perilous: Comfortable' (বিপদজনক: আরামদায়ক)।</p>",
+        },
+        {
+          id: 5,
+          question: "Which of the following pairs contains correct synonym?",
+          options: {
+            a: "Powerful: Leverage",
+            b: "Practice: Hands-on",
+            c: "Plan: Platform",
+            d: "Possibility: Viable",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক Synonym (সমার্থক শব্দ) জোড়াটি খুঁজে বের করতে বলা হয়েছে।</p><p><ul><li><b>(A) Powerful: Leverage:</b></li><ul><li><b>Powerful:</b> এর অর্থ হলো শক্তিশালী।</li><li><b>Leverage:</b> এর অর্থ হলো সুবিধা বা প্রভাব।</li><li>এরা সরাসরি Synonym নয়। 'Leverage' হলো 'powerful' হওয়ার একটি ফল বা উপায়।</li></ul><li><b>(B) Practice: Hands-on:</b></li><ul><li><b>Practice:</b> এর অর্থ হলো অনুশীলন বা ব্যবহারিক কাজ।</li><li><b>Hands-on:</b> এর অর্থ হলো ব্যবহারিক বা সরাসরি অংশগ্রহণের মাধ্যমে শেখা।</li><li>'Hands-on practice' একটি সাধারণ Phrase, যা ব্যবহারিক অনুশীলনকে বোঝায়। তাই 'Practice' এবং 'Hands-on' কাছাকাছি অর্থ প্রকাশ করে এবং একটি সঠিক Synonym জোড়া।</li></ul><li><b>(C) Plan: Platform:</b></li><ul><li><b>Plan:</b> এর অর্থ হলো পরিকল্পনা।</li><li><b>Platform:</b> এর অর্থ হলো মঞ্চ বা কর্মক্ষেত্র।</li><li>এরা সরাসরি Synonym নয়।</li></ul><li><b>(D) Possibility: Viable:</b></li><ul><li><b>Possibility:</b> এর অর্থ হলো সম্ভাবনা।</li><li><b>Viable:</b> এর অর্থ হলো কার্যকর বা সম্ভাব্য।</li><li>'Viable' হলো 'Possibility' এর একটি গুণবাচক রূপ, কিন্তু সরাসরি Synonym নয়। 'Viable' মানে যা সম্ভব এবং সফল হতে পারে।</li></ul></ul></p><p>সুতরাং, সঠিক Synonym জোড়া হলো 'Practice: Hands-on' (অনুশীলন: ব্যবহারিক)।</p>",
+        },
+        {
+          id: 6,
+          question: "The antonym of 'perpetual' is -",
+          options: {
+            a: "permanent",
+            b: "everlasting",
+            c: "genuine",
+            d: "momentary",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'perpetual' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Perpetual:</b> এর অর্থ হলো চিরস্থায়ী, নিরন্তর বা অনন্ত।</li><li><b>Permanent:</b> এর অর্থ হলো স্থায়ী। এটি 'perpetual' এর একটি Synonym।</li><li><b>Everlasting:</b> এর অর্থ হলো চিরন্তন বা অনন্ত। এটিও 'perpetual' এর একটি Synonym।</li><li><b>Genuine:</b> এর অর্থ হলো আসল বা খাঁটি।</li><li><b>Momentary:</b> এর অর্থ হলো ক্ষণস্থায়ী, মুহূর্তের জন্য বা অল্প সময়ের জন্য। এটি 'perpetual' (চিরস্থায়ী) এর সরাসরি বিপরীত।</li></ul></p><p>সুতরাং, 'perpetual' এর বিপরীত শব্দ হলো 'momentary' (ক্ষণস্থায়ী)।</p>",
+        },
+        {
+          id: 7,
+          question: "Choose the correct synonym for the word 'Pertinent' -",
+          options: {
+            a: "Inappropriate",
+            b: "Relevant",
+            c: "Contradictory",
+            d: "Inapplicable",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Pertinent' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pertinent:</b> এর অর্থ হলো প্রাসঙ্গিক, উপযুক্ত বা সম্পর্কিত।</li><li><b>Inappropriate:</b> এর অর্থ হলো অনুপযুক্ত বা বেমানান। এটি 'Pertinent' এর Antonym।</li><li><b>Relevant:</b> এর অর্থ হলো প্রাসঙ্গিক বা সম্পর্কিত। এটি 'Pertinent' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Contradictory:</b> এর অর্থ হলো বিপরীত বা স্ববিরোধী।</li><li><b>Inapplicable:</b> এর অর্থ হলো অপ্রযোজ্য বা অকার্যকর। এটি 'Pertinent' এর Antonym।</li></ul></p><p>সুতরাং, 'Pertinent' এর সমার্থক শব্দ হলো 'Relevant' (প্রাসঙ্গিক)।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "Which of the following has correct synonym for the corresponding word?",
+          options: {
+            a: "Vicarious: Corruption",
+            b: "Pedantic: Academic",
+            c: "Muddle: Caked",
+            d: "Scoff: Admonish",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক Synonym (সমার্থক শব্দ) জোড়াটি খুঁজে বের করতে বলা হয়েছে।</p><p><ul><li><b>(A) Vicarious: Corruption:</b></li><ul><li><b>Vicarious:</b> এর অর্থ হলো অন্যের অভিজ্ঞতা থেকে পাওয়া বা পরোক্ষভাবে অনুভব করা।</li><li><b>Corruption:</b> এর অর্থ হলো দুর্নীতি।</li><li>এরা Synonym নয়।</li></ul><li><b>(B) Pedantic: Academic:</b></li><ul><li><b>Pedantic:</b> এর অর্থ হলো পণ্ডিতি বা জ্ঞান জাহিরকারী। এটি প্রায়শই এমন কাউকে বোঝায় যে জ্ঞান প্রদর্শনে অতি আগ্রহী এবং ক্ষুদ্র নিয়ম বা বিশদ বিবরণ নিয়ে বেশি চিন্তিত।</li><li><b>Academic:</b> এর অর্থ হলো শিক্ষাগত বা পাণ্ডিত্যপূর্ণ। 'Pedantic' আচরণ প্রায়শই একাডেমিক পরিবেশে বা একাডেমিক আলোচনার সময় দেখা যায়, তাই 'Academic' একটি প্রাসঙ্গিক Synonym।</li><li>এই দুটি শব্দ একে অপরের সাথে সম্পর্কিত এবং 'Pedantic' এর একটি দিক 'Academic' অর্থে প্রকাশ পায়। এটি একটি সঠিক Synonym জোড়া।</li></ul><li><b>(C) Muddle: Caked:</b></li><ul><li><b>Muddle:</b> এর অর্থ হলো গোলমাল করা বা জগাখিচুড়ি পাকানো।</li><li><b>Caked:</b> এর অর্থ হলো জমাট বাঁধা বা স্তর পড়ে যাওয়া।</li><li>এরা Synonym নয়।</li></ul><li><b>(D) Scoff: Admonish:</b></li><ul><li><b>Scoff:</b> এর অর্থ হলো উপহাস করা বা বিদ্রূপ করা।</li><li><b>Admonish:</b> এর অর্থ হলো তিরস্কার করা বা সতর্ক করা।</li><li>এরা Synonym নয়।</li></ul></ul></p><p>সুতরাং, সঠিক Synonym জোড়া হলো 'Pedantic: Academic' (পণ্ডিতি: শিক্ষাগত/পাণ্ডিত্যপূর্ণ)।</p>",
+        },
+        {
+          id: 9,
+          question: "What is the synonym for 'opinion'?",
+          options: {
+            a: "Misgiving",
+            b: "Knowledge",
+            c: "Fact",
+            d: "Belief",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'opinion' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Opinion:</b> এর অর্থ হলো মতামত, ধারণা বা বিশ্বাস। এটি এমন একটি ধারণা যা প্রমাণ দ্বারা পুরোপুরি সমর্থিত নাও হতে পারে।</li><li><b>Misgiving:</b> এর অর্থ হলো সন্দেহ বা উদ্বেগ।</li><li><b>Knowledge:</b> এর অর্থ হলো জ্ঞান। এটি সাধারণত প্রমাণিত সত্য বা তথ্যকে বোঝায়।</li><li><b>Fact:</b> এর অর্থ হলো ঘটনা বা তথ্য। এটি প্রমাণিত সত্য।</li><li><b>Belief:</b> এর অর্থ হলো বিশ্বাস, ধারণা বা মতামত। এটি 'opinion' এর একটি সঠিক সমার্থক শব্দ।</li></ul></p><p>সুতরাং, 'opinion' এর সমার্থক শব্দ হলো 'Belief' (বিশ্বাস/ধারণা)।</p>",
+        },
+        {
+          id: 10,
+          question: "What is the antonym of the word 'pernicious'?",
+          options: {
+            a: "Mellifluous",
+            b: "Onerous",
+            c: "Beneficial",
+            d: "Spurious",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'pernicious' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pernicious:</b> এর অর্থ হলো ক্ষতিকারক, মারাত্মক বা ধ্বংসাত্মক, বিশেষ করে যা ধীরে ধীরে বা অগোচরে ক্ষতি করে।</li><li><b>Mellifluous:</b> এর অর্থ হলো সুমিষ্ট বা মধুর ধ্বনিযুক্ত।</li><li><b>Onerous:</b> এর অর্থ হলো কষ্টকর বা গুরুভার।</li><li><b>Beneficial:</b> এর অর্থ হলো উপকারী বা কল্যাণকর। এটি 'pernicious' (ক্ষতিকারক) এর সরাসরি বিপরীত।</li><li><b>Spurious:</b> এর অর্থ হলো নকল বা মিথ্যা।</li></ul></p><p>সুতরাং, 'pernicious' এর বিপরীত শব্দ হলো 'Beneficial' (উপকারী)।</p>",
+        },
+        {
+          id: 11,
+          question: "The synonym of the word 'Progress' is -",
+          options: {
+            a: "Performance",
+            b: "Regression",
+            c: "Advancement",
+            d: "Enhancement",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Progress' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Progress:</b> এর অর্থ হলো উন্নতি, অগ্রগতি বা সম্মুখগমন।</li><li><b>Performance:</b> এর অর্থ হলো কর্মক্ষমতা বা কার্যকারিতা।</li><li><b>Regression:</b> এর অর্থ হলো পশ্চাদগমন বা অবনতি। এটি 'Progress' এর Antonym।</li><li><b>Advancement:</b> এর অর্থ হলো অগ্রগতি, উন্নতি বা উন্নতিসাধন। এটি 'Progress' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Enhancement:</b> এর অর্থ হলো বৃদ্ধি বা উন্নতকরণ। এটি 'Progress' এর একটি ফলাফল হতে পারে।</li></ul></p><p>সুতরাং, 'Progress' এর সমার্থক শব্দ হলো 'Advancement' (অগ্রগতি)।</p>",
+        },
+        {
+          id: 12,
+          question: "The correct synonym of 'Mediocre' is -",
+          options: {
+            a: "Average",
+            b: "Industrious",
+            c: "Ordinary",
+            d: "Better",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'Mediocre' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Mediocre:</b> এর অর্থ হলো মধ্যম মানের, সাধারণ বা মাঝারি। এটি এমন কিছুকে বোঝায় যা ভালোও নয়, খারাপও নয়, শুধু সাধারণ।</li><li><b>Average:</b> এর অর্থ হলো গড় বা মধ্যম। এটি 'Mediocre' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Industrious:</b> এর অর্থ হলো পরিশ্রমী।</li><li><b>Ordinary:</b> এর অর্থ হলো সাধারণ। এটি 'Mediocre' এর একটি কাছাকাছি সমার্থক শব্দ, তবে 'Average' শব্দটি মানের দিক থেকে 'Mediocre' এর সাথে হুবহু মিলে যায়।</li><li><b>Better:</b> এর অর্থ হলো ভালো।</li></ul></p><p>সুতরাং, 'Mediocre' এর সমার্থক শব্দ হলো 'Average' (মধ্যম)।</p>",
+        },
+        {
+          id: 13,
+          question: "The synonym of the word 'Original' is -",
+          options: {
+            a: "amusing",
+            b: "artificial",
+            c: "true",
+            d: "accumulate",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Original' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Original:</b> এর অনেক অর্থ থাকতে পারে। যেমন: ১. প্রথম, মৌলিক, যা আগে ছিল না (যেমন - original idea)। ২. খাঁটি, আসল, কপি নয় এমন (যেমন - original document)। ৩. উদ্ভাবনী বা নতুন (যেমন - original artist)।</li><li><b>Amusing:</b> এর অর্থ হলো মজাদার বা বিনোদনমূলক।</li><li><b>Artificial:</b> এর অর্থ হলো কৃত্রিম বা নকল। এটি 'Original' এর (আসল অর্থে) Antonym।</li><li><b>True:</b> এর অর্থ হলো সত্য, আসল বা খাঁটি। 'Original' যখন 'আসল' বা 'খাঁটি' অর্থে ব্যবহৃত হয় (যেমন - original painting), তখন 'true' এর একটি সম্ভাব্য সমার্থক শব্দ হতে পারে। যদিও 'authentic', 'genuine', 'novel' বা 'unique' আরও সরাসরি সমার্থক। প্রদত্ত বিকল্পগুলোর মধ্যে 'true' কেই সবচেয়ে কাছাকাছি ধরা যায়।</li><li><b>Accumulate:</b> এর অর্থ হলো জমা করা বা সঞ্চয় করা। এটি একটি Verb, যা 'Original' এর সাথে সম্পর্কহীন।</li></ul></p><p>প্রদত্ত অপশনগুলোর মধ্যে, 'Original' কে 'আসল' বা 'খাঁটি' অর্থে বিবেচনা করলে 'true' একটি দুর্বল হলেও একমাত্র সম্ভাব্য সমার্থক শব্দ।</p>",
+        },
+        {
+          id: 14,
+          question: "Find the appropriate antonym of 'Malice'.",
+          options: {
+            a: "Bitterness",
+            b: "Animosity",
+            c: "Malevolence",
+            d: "Kindness",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'Malice' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Malice:</b> এর অর্থ হলো বিদ্বেষ, ঘৃণা বা অনিষ্ট করার উদ্দেশ্য।</li><li><b>Bitterness:</b> এর অর্থ হলো তিক্ততা বা বিদ্বেষ। এটি 'Malice' এর একটি Synonym।</li><li><b>Animosity:</b> এর অর্থ হলো শত্রুতা বা বিদ্বেষ। এটিও 'Malice' এর একটি Synonym।</li><li><b>Malevolence:</b> এর অর্থ হলো বিদ্বেষ বা অপরের ক্ষতি করার ইচ্ছা। এটিও 'Malice' এর একটি Synonym।</li><li><b>Kindness:</b> এর অর্থ হলো দয়া, সহানুভূতি বা অপরের প্রতি ভালো মনোভাব। এটি 'Malice' (বিদ্বেষ) এর সরাসরি বিপরীত।</li></ul></p><p>সুতরাং, 'Malice' এর বিপরীত শব্দ হলো 'Kindness' (দয়া)।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "Progress is the antidote to stagnation. The bold-faced words are -",
+          options: {
+            a: "homonyms",
+            b: "synonyms",
+            c: "antonyms",
+            d: "hyponyms",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Progress' এবং 'stagnation' শব্দ দুটির সম্পর্ক জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Progress:</b> এর অর্থ হলো উন্নতি বা অগ্রগতি।</li><li><b>Stagnation:</b> এর অর্থ হলো স্থবিরতা বা অচলাবস্থা।</li><li><b>Homonyms:</b> এর অর্থ হলো একই উচ্চারণ বা বানান কিন্তু ভিন্ন অর্থযুক্ত শব্দ (যেমন - 'bear' প্রাণী এবং 'bear' বহন করা)।</li><li><b>Synonyms:</b> এর অর্থ হলো সমার্থক শব্দ।</li><li><b>Antonyms:</b> এর অর্থ হলো বিপরীত শব্দ। 'Progress' (অগ্রগতি) এবং 'stagnation' (স্থবিরতা) একে অপরের বিপরীত।</li><li><b>Hyponyms:</b> এর অর্থ হলো একটি বৃহত্তর ক্যাটাগরির অধীনে থাকা নির্দিষ্ট শব্দ (যেমন - 'rose' হলো 'flower' এর Hyponym)।</li></ul></p><p>সুতরাং, 'Progress' এবং 'stagnation' শব্দ দুটি হলো 'antonyms' (বিপরীত শব্দ)।</p>",
+        },
+        {
+          id: 16,
+          question: "'Very Primeval' means -",
+          options: {
+            a: "Very ancient",
+            b: "Peak time",
+            c: "Most important",
+            d: "Main example",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'Primeval' শব্দের অর্থ জানতে চাওয়া হয়েছে। 'Very Primeval' অর্থ হবে 'খুবই আদিম' বা 'খুবই প্রাচীন'।</p><p><ul><li><b>Primeval:</b> এর অর্থ হলো আদিম, প্রাচীনতম বা সৃষ্টির প্রথম দিকের।</li><li><b>Very ancient:</b> এর অর্থ হলো খুবই প্রাচীন বা আদিম। এটি 'Very Primeval' এর সঠিক অর্থ।</li><li><b>Peak time:</b> এর অর্থ হলো সর্বোচ্চ সময় বা শীর্ষ সময়।</li><li><b>Most important:</b> এর অর্থ হলো সবচেয়ে গুরুত্বপূর্ণ।</li><li><b>Main example:</b> এর অর্থ হলো প্রধান উদাহরণ।</li></ul></p><p>সুতরাং, 'Very Primeval' মানে হলো 'Very ancient' (খুবই প্রাচীন)।</p>",
+        },
+        {
+          id: 17,
+          question: "The meaning of the word 'Nocturnal' is -",
+          options: {
+            a: "Sleepy in the afternoon",
+            b: "Sleepless during the day",
+            c: "Occurring or active at night",
+            d: "Passive during night",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Nocturnal' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Nocturnal:</b> এর অর্থ হলো নিশাচর বা রাতের বেলায় সক্রিয়। এটি এমন প্রাণীকে বোঝায় যা প্রধানত রাতে শিকার করে বা চলাচল করে, অথবা রাতের বেলায় ঘটে এমন ঘটনা।</li><li><b>Sleepy in the afternoon:</b> এর অর্থ হলো দুপুরে ঘুমন্ত।</li><li><b>Sleepless during the day:</b> এর অর্থ হলো দিনের বেলায় নিদ্রাহীন।</li><li><b>Occurring or active at night:</b> এর অর্থ হলো রাতের বেলায় ঘটে বা সক্রিয় থাকে। এটি 'Nocturnal' এর সঠিক অর্থ।</li><li><b>Passive during night:</b> এর অর্থ হলো রাতে নিষ্ক্রিয়। এটি 'Nocturnal' এর Antonym।</li></ul></p><p>সুতরাং, 'Nocturnal' মানে হলো 'Occurring or active at night' (রাতের বেলায় ঘটে বা সক্রিয়)।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "The leaders of the party held a post mortem into the election disaster.",
+          options: {
+            a: "hearing",
+            b: "assessment",
+            c: "survey",
+            d: "investigation",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'post mortem' শব্দের অর্থ জানতে চাওয়া হয়েছে, যা সাধারণত কোনো ঘটনা বা বিপর্যয়ের পর তার কারণ এবং প্রভাব বিশ্লেষণের জন্য একটি গভীর তদন্তকে বোঝায়।</p><p><ul><li><b>Post mortem:</b> এর আক্ষরিক অর্থ হলো মৃত্যুর পর পরীক্ষা (ময়নাতদন্ত)। তবে, এটি একটি Idiomatic Expression হিসেবে কোনো ঘটনা বা পরিস্থিতি বিশদভাবে পরীক্ষা করা, বিশ্লেষণ করা বা তদন্ত করা বোঝায়, বিশেষ করে কোনো ব্যর্থতা বা বিপর্যয়ের কারণ খুঁজে বের করার জন্য।</li><li><b>Hearing:</b> এর অর্থ হলো শুনানি।</li><li><b>Assessment:</b> এর অর্থ হলো মূল্যায়ন।</li><li><b>Survey:</b> এর অর্থ হলো জরিপ।</li><li><b>Investigation:</b> এর অর্থ হলো তদন্ত বা অনুসন্ধান। এটি 'post mortem' এর অর্থকে সবচেয়ে ভালোভাবে প্রকাশ করে যখন কোনো ঘটনার কারণ বিশ্লেষণ করা হয়।</li></ul></p><p>সুতরাং, 'post mortem' মানে হলো 'investigation' (তদন্ত)।</p>",
+        },
+        {
+          id: 19,
+          question: "The synonym for 'Nepotism' is -",
+          options: {
+            a: "Terrorism",
+            b: "Disposition",
+            c: "Neatness",
+            d: "Favouritism",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'Nepotism' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Nepotism:</b> এর অর্থ হলো স্বজনপ্রীতি বা আত্মীয়-স্বজনের প্রতি পক্ষপাতিত্ব। এটি ক্ষমতা বা প্রভাব ব্যবহার করে আত্মীয়-স্বজন বা বন্ধুদের অযাচিত সুবিধা দেওয়াকে বোঝায়।</li><li><b>Terrorism:</b> এর অর্থ হলো সন্ত্রাসবাদ।</li><li><b>Disposition:</b> এর অর্থ হলো প্রবণতা বা স্বভাব।</li><li><b>Neatness:</b> এর অর্থ হলো পরিচ্ছন্নতা।</li><li><b>Favouritism:</b> এর অর্থ হলো পক্ষপাতিত্ব বা favoritism। এটি 'Nepotism' এর একটি সঠিক সমার্থক শব্দ, বিশেষ করে যখন আত্মীয়-স্বজনের প্রতি পক্ষপাতিত্ব বোঝায়।</li></ul></p><p>সুতরাং, 'Nepotism' এর সমার্থক শব্দ হলো 'Favouritism' (স্বজনপ্রীতি/পক্ষপাতিত্ব)।</p>",
+        },
+        {
+          id: 20,
+          question: "The synonym of 'Pandemonium' is -",
+          options: {
+            a: "Order",
+            b: "Calm",
+            c: "Commotion",
+            d: "Peace",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Pandemonium' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pandemonium:</b> এর অর্থ হলো চরম বিশৃঙ্খলা, হট্টগোল বা গোলমাল। এটি এমন একটি পরিস্থিতিকে বোঝায় যেখানে ব্যাপক বিশৃঙ্খলা এবং কোলাহল বিদ্যমান।</li><li><b>Order:</b> এর অর্থ হলো শৃঙ্খলা বা নিয়ম। এটি 'Pandemonium' এর Antonym।</li><li><b>Calm:</b> এর অর্থ হলো শান্ত বা স্থির। এটি 'Pandemonium' এর Antonym।</li><li><b>Commotion:</b> এর অর্থ হলো গোলমাল, হট্টগোল বা বিশৃঙ্খলা। এটি 'Pandemonium' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Peace:</b> এর অর্থ হলো শান্তি। এটি 'Pandemonium' এর Antonym।</li></ul></p><p>সুতরাং, 'Pandemonium' এর সমার্থক শব্দ হলো 'Commotion' (গোলমাল)।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "Which do you think is the nearest in meaning to 'proviso'?",
+          options: {
+            a: "Sanction",
+            b: "Substitute",
+            c: "Stipulation",
+            d: "Directive",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'proviso' শব্দের সবচেয়ে কাছাকাছি অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Proviso:</b> এর অর্থ হলো শর্ত, বিধান বা সতর্কতামূলক ধারা। এটি এমন একটি শর্ত যা কোনো চুক্তি বা প্রস্তাবের সাথে যুক্ত থাকে।</li><li><b>Sanction:</b> এর অর্থ হলো অনুমোদন বা নিষেধাজ্ঞা। এটি 'proviso' এর সাথে সরাসরি সম্পর্কিত নয়।</li><li><b>Substitute:</b> এর অর্থ হলো বিকল্প।</li><li><b>Stipulation:</b> এর অর্থ হলো শর্ত, বিধান বা চুক্তি। এটি 'proviso' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Directive:</b> এর অর্থ হলো নির্দেশ বা আদেশ।</li></ul></p><p>সুতরাং, 'proviso' এর সবচেয়ে কাছাকাছি অর্থ হলো 'Stipulation' (শর্ত)।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "Your mood seems to be very meditative this evening. Here 'Meditative' means -",
+          options: {
+            a: "gleeful",
+            b: "desperate",
+            c: "thoughtful",
+            d: "stern",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Meditative' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Meditative:</b> এর অর্থ হলো ধ্যানপূর্ণ, চিন্তাশীল বা গভীর চিন্তায় মগ্ন।</li><li><b>Gleeful:</b> এর অর্থ হলো আনন্দিত বা প্রফুল্ল।</li><li><b>Desperate:</b> এর অর্থ হলো মরিয়া বা হতাশ।</li><li><b>Thoughtful:</b> এর অর্থ হলো চিন্তাশীল বা গভীরভাবে ভাবনাচিন্তা করা। এটি 'Meditative' এর একটি সঠিক অর্থ।</li><li><b>Stern:</b> এর অর্থ হলো কঠোর বা গম্ভীর।</li></ul></p><p>সুতরাং, 'Meditative' মানে হলো 'thoughtful' (চিন্তাশীল)।</p>",
+        },
+        {
+          id: 23,
+          question: "The word 'Niche' means -",
+          options: {
+            a: "Statue",
+            b: "Proper place",
+            c: "Humble",
+            d: "Confusion",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Niche' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Niche:</b> এর অর্থ হলো কুলুঙ্গি, উপযুক্ত স্থান বা নির্দিষ্ট একটি ক্ষেত্র যেখানে কেউ বা কিছু বিশেষ পারদর্শী। এটি এমন একটি উপযুক্ত স্থান বা অবস্থা যেখানে কেউ সফল হতে পারে।</li><li><b>Statue:</b> এর অর্থ হলো মূর্তি।</li><li><b>Proper place:</b> এর অর্থ হলো উপযুক্ত স্থান। এটি 'Niche' এর একটি সঠিক অর্থ।</li><li><b>Humble:</b> এর অর্থ হলো বিনয়ী বা নম্র।</li><li><b>Confusion:</b> এর অর্থ হলো বিভ্রান্তি।</li></ul></p><p>সুতরাং, 'Niche' মানে হলো 'Proper place' (উপযুক্ত স্থান)।</p>",
+        },
+        {
+          id: 24,
+          question: "The synonym of placid is -",
+          options: {
+            a: "honor",
+            b: "circumspect",
+            c: "serene",
+            d: "inept",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'placid' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Placid:</b> এর অর্থ হলো শান্ত, স্থির বা অবিচল। এটি সাধারণত জলরাশি বা মেজাজের ক্ষেত্রে ব্যবহৃত হয়।</li><li><b>Honor:</b> এর অর্থ হলো সম্মান।</li><li><b>Circumspect:</b> এর অর্থ হলো সতর্ক বা বিচক্ষণ।</li><li><b>Serene:</b> এর অর্থ হলো শান্ত, নির্মল বা অবিচলিত। এটি 'placid' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Inept:</b> এর অর্থ হলো অদক্ষ বা অনুপযুক্ত।</li></ul></p><p>সুতরাং, 'placid' এর সমার্থক শব্দ হলো 'serene' (শান্ত)।</p>",
+        },
+        {
+          id: 25,
+          question: "Select the synonym for 'Pastoral'.",
+          options: {
+            a: "Urban",
+            b: "Civilized",
+            c: "Agrarian",
+            d: "Industrial",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Pastoral' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pastoral:</b> এর অর্থ হলো গ্রামীণ, পশুপালন সম্পর্কিত বা যাজকীয়। এটি সাধারণত গ্রাম্য জীবন, মেষপালকদের জীবন বা প্রকৃতির শান্ত সৌন্দর্যকে বোঝায়।</li><li><b>Urban:</b> এর অর্থ হলো শহুরে। এটি 'Pastoral' এর Antonym।</li><li><b>Civilized:</b> এর অর্থ হলো সভ্য।</li><li><b>Agrarian:</b> এর অর্থ হলো কৃষিভিত্তিক বা কৃষি সম্পর্কিত। গ্রামীণ জীবন এবং পশুপালনের সাথে 'Agrarian' ঘনিষ্ঠভাবে সম্পর্কিত, তাই এটি 'Pastoral' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Industrial:</b> এর অর্থ হলো শিল্পভিত্তিক।</li></ul></p><p>সুতরাং, 'Pastoral' এর সমার্থক শব্দ হলো 'Agrarian' (কৃষিভিত্তিক/গ্রামীণ)।</p>",
+        },
+        {
+          id: 26,
+          question: "Which one is the correct synonym for 'Palatial'?",
+          options: {
+            a: "weak",
+            b: "significant",
+            c: "thrifty",
+            d: "magnificent",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'Palatial' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Palatial:</b> এর অর্থ হলো প্রাসাদোপম, রাজকীয় বা জাঁকজমকপূর্ণ। এটি এমন কিছুকে বোঝায় যা আকারে বড় এবং জমকালো, প্রাসাদের মতো।</li><li><b>Weak:</b> এর অর্থ হলো দুর্বল।</li><li><b>Significant:</b> এর অর্থ হলো গুরুত্বপূর্ণ।</li><li><b>Thrifty:</b> এর অর্থ হলো মিতব্যয়ী বা সাশ্রয়ী।</li><li><b>Magnificent:</b> এর অর্থ হলো জমকালো, মহৎ বা জাঁকজমকপূর্ণ। এটি 'Palatial' এর একটি সঠিক সমার্থক শব্দ।</li></ul></p><p>সুতরাং, 'Palatial' এর সমার্থক শব্দ হলো 'Magnificent' (জমকালো)।</p>",
+        },
+        {
+          id: 27,
+          question: "Which one is the correct synonym for 'Plethora'?",
+          options: {
+            a: "Overabundance",
+            b: "Pedestal",
+            c: "Petty",
+            d: "Pacify",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'Plethora' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Plethora:</b> এর অর্থ হলো প্রাচুর্য, আধিক্য বা অতিরিক্ত পরিমাণ।</li><li><b>Overabundance:</b> এর অর্থ হলো অতিরিক্ত প্রাচুর্য বা অতিরিক্ত পরিমাণ। এটি 'Plethora' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Pedestal:</b> এর অর্থ হলো পাদদেশ বা ভিত্তি।</li><li><b>Petty:</b> এর অর্থ হলো তুচ্ছ বা ছোট।</li><li><b>Pacify:</b> এর অর্থ হলো শান্ত করা।</li></ul></p><p>সুতরাং, 'Plethora' এর সমার্থক শব্দ হলো 'Overabundance' (অতিরিক্ত প্রাচুর্য)।</p>",
+        },
+        {
+          id: 28,
+          question: "The synonym of the word 'network' is -",
+          options: {
+            a: "wider",
+            b: "prevalence",
+            c: "setup",
+            d: "intersection",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'network' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Network:</b> এর অর্থ হলো নেটওয়ার্ক, জালিকা বা আন্তঃসংযুক্ত সিস্টেম। এটি সাধারণত এমন একটি বিন্যাসকে বোঝায় যেখানে একাধিক বিন্দু বা উপাদান একে অপরের সাথে সংযুক্ত।</li><li><b>Wider:</b> এর অর্থ হলো প্রশস্ততর।</li><li><b>Prevalence:</b> এর অর্থ হলো ব্যাপকতা বা প্রচলন।</li><li><b>Setup:</b> এর অর্থ হলো বিন্যাস, ব্যবস্থা বা স্থাপন। একটি 'network' হলো এক ধরনের 'setup' বা বিন্যাস। এটি 'network' এর একটি উপযুক্ত সমার্থক শব্দ।</li><li><b>Intersection:</b> এর অর্থ হলো ছেদবিন্দু বা সংযোগস্থল।</li></ul></p><p>সুতরাং, 'network' এর সমার্থক শব্দ হলো 'setup' (বিন্যাস/ব্যবস্থা)।</p>",
+        },
+        {
+          id: 29,
+          question: 'The word "Melancholy" refers to -',
+          options: {
+            a: "Dark substance on skin",
+            b: "Thoughtfulness",
+            c: "Depression",
+            d: "Sounding sweet and smooth",
+          },
+          correct: "c",
+          explanation:
+            '<p>এখানে "Melancholy" শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Melancholy:</b> এর অর্থ হলো বিষণ্ণতা, দুঃখ বা হতাশা। এটি গভীর এবং দীর্ঘস্থায়ী দুঃখের অনুভূতিকে বোঝায়।</li><li><b>Dark substance on skin:</b> এর অর্থ হলো ত্বকের কালো পদার্থ।</li><li><b>Thoughtfulness:</b> এর অর্থ হলো চিন্তাশীলতা।</li><li><b>Depression:</b> এর অর্থ হলো বিষণ্ণতা বা অবসাদ। এটি "Melancholy" এর একটি সঠিক অর্থ।</li><li><b>Sounding sweet and smooth:</b> এর অর্থ হলো মিষ্টি ও মসৃণ শব্দ।</li></ul></p><p>সুতরাং, "Melancholy" মানে হলো "Depression" (বিষণ্ণতা)।</p>',
+        },
+        {
+          id: 30,
+          question: 'Which one is the antonym of "Permeable"?',
+          options: {
+            a: "Impenetrable",
+            b: "Pervious",
+            c: "Parvious",
+            d: "Transient",
+          },
+          correct: "a",
+          explanation:
+            '<p>এখানে "Permeable" শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Permeable:</b> এর অর্থ হলো প্রবেশ্য, ভেদযোগ্য বা সচ্ছিদ্র। এটি এমন কোনো কিছুকে বোঝায় যার মধ্য দিয়ে তরল বা গ্যাস প্রবেশ করতে পারে।</li><li><b>Impenetrable:</b> এর অর্থ হলো দুর্ভেদ্য, অভেদ্য বা অনতিগম্য। এটি এমন কিছুকে বোঝায় যার মধ্য দিয়ে কিছু প্রবেশ করতে পারে না। এটি "Permeable" এর সরাসরি বিপরীত।</li><li><b>Pervious:</b> এর অর্থ হলো প্রবেশ্য বা ভেদযোগ্য। এটি "Permeable" এর একটি Synonym।</li><li><b>Parvious:</b> এই শব্দটি সাধারণত ব্যবহৃত হয় না।</li><li><b>Transient:</b> এর অর্থ হলো ক্ষণস্থায়ী বা অস্থায়ী।</li></ul></p><p>সুতরাং, "Permeable" এর বিপরীত শব্দ হলো "Impenetrable" (অভেদ্য)।</p>',
+        },
+        {
+          id: 31,
+          question: "The antonym word of 'Meager' is -",
+          options: {
+            a: "Enough",
+            b: "Miser",
+            c: "Little",
+            d: "Scant",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'Meager' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Meager:</b> এর অর্থ হলো স্বল্প, অপ্রতুল, কম বা অপর্যাপ্ত।</li><li><b>Enough:</b> এর অর্থ হলো পর্যাপ্ত বা যথেষ্ট। এটি 'Meager' (স্বল্প) এর সরাসরি বিপরীত।</li><li><b>Miser:</b> এর অর্থ হলো কৃপণ ব্যক্তি। এটি একটি Noun।</li><li><b>Little:</b> এর অর্থ হলো ছোট বা অল্প। এটি 'Meager' এর একটি Synonym।</li><li><b>Scant:</b> এর অর্থ হলো স্বল্প বা অপর্যাপ্ত। এটিও 'Meager' এর একটি Synonym।</li></ul></p><p>সুতরাং, 'Meager' এর বিপরীত শব্দ হলো 'Enough' (পর্যাপ্ত)।</p>",
+        },
+        {
+          id: 32,
+          question: "The antonym of 'Meticulous' is -",
+          options: {
+            a: "Moral",
+            b: "Homogeneous",
+            c: "Careless",
+            d: "Harsh",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Meticulous' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Meticulous:</b> এর অর্থ হলো অতি সতর্ক, খুঁতখুঁতে বা পুঙ্খানুপুঙ্খ। এটি এমন কাউকে বোঝায় যিনি বিশদ বিবরণে অত্যন্ত যত্নবান।</li><li><b>Moral:</b> এর অর্থ হলো নৈতিক।</li><li><b>Homogeneous:</b> এর অর্থ হলো সমসত্ত্ব বা একই ধরনের।</li><li><b>Careless:</b> এর অর্থ হলো অসাবধান, অমনোযোগী বা বেখেয়ালী। এটি 'Meticulous' (অতি সতর্ক) এর সরাসরি বিপরীত।</li><li><b>Harsh:</b> এর অর্থ হলো কঠোর বা কর্কশ।</li></ul></p><p>সুতরাং, 'Meticulous' এর বিপরীত শব্দ হলো 'Careless' (অসাবধান)।</p>",
+        },
+        {
+          id: 33,
+          question: "'Monstrous' is similar to -",
+          options: {
+            a: "Ample",
+            b: "Dauntless",
+            c: "Colossal",
+            d: "Logical",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Monstrous' শব্দের সমার্থক শব্দ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Monstrous:</b> এর অর্থ হলো বিশাল, ভয়ংকর, দানবীয় বা অস্বাভাবিক বড়। এটি এমন কিছুকে বোঝায় যা আকারে বা পরিমাণে অত্যন্ত বড় বা বিকট।</li><li><b>Ample:</b> এর অর্থ হলো যথেষ্ট বা প্রচুর।</li><li><b>Dauntless:</b> এর অর্থ হলো নির্ভীক বা সাহসিক।</li><li><b>Colossal:</b> এর অর্থ হলো বিশাল, বিরাট বা অত্যধিক বড়। এটি 'Monstrous' এর একটি সঠিক সমার্থক শব্দ যখন আকার বোঝায়।</li><li><b>Logical:</b> এর অর্থ হলো যৌক্তিক।</li></ul></p><p>সুতরাং, 'Monstrous' এর সমার্থক শব্দ হলো 'Colossal' (বিশাল)।</p>",
+        },
+        {
+          id: 34,
+          question: "The synonym of perilous is -",
+          options: {
+            a: "friendly",
+            b: "risky",
+            c: "disastrous",
+            d: "greedy",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'perilous' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Perilous:</b> এর অর্থ হলো বিপদজনক, ঝুঁকিপূর্ণ বা অত্যন্ত বিপজ্জনক।</li><li><b>Friendly:</b> এর অর্থ হলো বন্ধুত্বপূর্ণ।</li><li><b>Risky:</b> এর অর্থ হলো ঝুঁকিপূর্ণ বা বিপদজনক। এটি 'perilous' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Disastrous:</b> এর অর্থ হলো ভয়াবহ বা ধ্বংসাত্মক। এটি 'perilous' এর একটি সম্ভাব্য ফলাফল হতে পারে, তবে সরাসরি Synonym নয়।</li><li><b>Greedy:</b> এর অর্থ হলো লোভী।</li></ul></p><p>সুতরাং, 'perilous' এর সমার্থক শব্দ হলো 'risky' (ঝুঁকিপূর্ণ)।</p>",
+        },
+        {
+          id: 35,
+          question: "Perishable is similar to -",
+          options: {
+            a: "quarrelsome",
+            b: "significant",
+            c: "temporary",
+            d: "acme",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Perishable' শব্দের সমার্থক শব্দ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Perishable:</b> এর অর্থ হলো পচনশীল, ক্ষণস্থায়ী বা যা সহজে নষ্ট হয়ে যায়।</li><li><b>Quarrelsome:</b> এর অর্থ হলো ঝগড়াটে।</li><li><b>Significant:</b> এর অর্থ হলো গুরুত্বপূর্ণ।</li><li><b>Temporary:</b> এর অর্থ হলো অস্থায়ী, ক্ষণস্থায়ী বা স্বল্পকালীন। এটি 'Perishable' এর একটি সঠিক সমার্থক শব্দ, বিশেষ করে যখন 'পচনশীল' বস্তুর ক্ষণস্থায়ী প্রকৃতি বোঝায়।</li><li><b>Acme:</b> এর অর্থ হলো চূড়া বা শীর্ষবিন্দু।</li></ul></p><p>সুতরাং, 'Perishable' এর সমার্থক শব্দ হলো 'temporary' (অস্থায়ী/ক্ষণস্থায়ী)।</p>",
+        },
+        {
+          id: 36,
+          question: "Pugnacious is similar to -",
+          options: {
+            a: "adroit",
+            b: "humorous",
+            c: "culpable",
+            d: "quarrelsome",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'Pugnacious' শব্দের সমার্থক শব্দ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pugnacious:</b> এর অর্থ হলো ঝগড়াটে, কলহপ্রিয় বা যুদ্ধপ্রবণ।</li><li><b>Adroit:</b> এর অর্থ হলো দক্ষ বা নিপুণ।</li><li><b>Humorous:</b> এর অর্থ হলো হাস্যরসাত্মক।</li><li><b>Culpable:</b> এর অর্থ হলো দোষী বা দায়ী।</li><li><b>Quarrelsome:</b> এর অর্থ হলো ঝগড়াটে বা কলহপ্রিয়। এটি 'Pugnacious' এর একটি সঠিক সমার্থক শব্দ।</li></ul></p><p>সুতরাং, 'Pugnacious' এর সমার্থক শব্দ হলো 'quarrelsome' (ঝগড়াটে)।</p>",
+        },
+        {
+          id: 37,
+          question: "The synonym of pinnacle is -",
+          options: {
+            a: "absurd",
+            b: "infamous",
+            c: "valiant",
+            d: "acme",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'pinnacle' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pinnacle:</b> এর অর্থ হলো চূড়া, শিখর বা সর্বোচ্চ বিন্দু। এটি কোনো কিছুর সর্বোচ্চ সাফল্য বা শ্রেষ্ঠত্বকেও বোঝায়।</li><li><b>Absurd:</b> এর অর্থ হলো হাস্যকর বা অযৌক্তিক।</li><li><b>Infamous:</b> এর অর্থ হলো কুখ্যাত।</li><li><b>Valiant:</b> এর অর্থ হলো সাহসী।</li><li><b>Acme:</b> এর অর্থ হলো চূড়া, শীর্ষবিন্দু বা পরিপূর্ণতা। এটি 'pinnacle' এর একটি সঠিক সমার্থক শব্দ।</li></ul></p><p>সুতরাং, 'pinnacle' এর সমার্থক শব্দ হলো 'acme' (চূড়া)।</p>",
+        },
+        {
+          id: 38,
+          question: "The word mandatory means -",
+          options: {
+            a: "optional",
+            b: "preferable",
+            c: "obligatory",
+            d: "charitable",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'mandatory' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Mandatory:</b> এর অর্থ হলো বাধ্যতামূলক, আবশ্যিক বা অপরিহার্য।</li><li><b>Optional:</b> এর অর্থ হলো ঐচ্ছিক। এটি 'mandatory' এর Antonym।</li><li><b>Preferable:</b> এর অর্থ হলো পছন্দের বা অধিকতর ভালো।</li><li><b>Obligatory:</b> এর অর্থ হলো বাধ্যতামূলক বা অবশ্য কর্তব্য। এটি 'mandatory' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Charitable:</b> এর অর্থ হলো দাতব্য বা পরোপকারী।</li></ul></p><p>সুতরাং, 'mandatory' মানে হলো 'obligatory' (বাধ্যতামূলক)।</p>",
+        },
+        {
+          id: 39,
+          question: "One of the meanings of 'poignant' is -",
+          options: {
+            a: "bitter",
+            b: "heart-rending",
+            c: "hopeless",
+            d: "significant",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'poignant' শব্দের একটি অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Poignant:</b> এর অর্থ হলো মর্মস্পর্শী, তীব্র আবেগপূর্ণ বা বেদনাদায়ক। এটি এমন অনুভূতি বা স্মৃতিকে বোঝায় যা গভীরভাবে প্রভাবিত করে।</li><li><b>Bitter:</b> এর অর্থ হলো তিক্ত।</li><li><b>Heart-rending:</b> এর অর্থ হলো হৃদয় বিদারক বা মর্মস্পর্শী। এটি 'poignant' এর একটি সঠিক অর্থ।</li><li><b>Hopeless:</b> এর অর্থ হলো আশাহীন।</li><li><b>Significant:</b> এর অর্থ হলো গুরুত্বপূর্ণ।</li></ul></p><p>সুতরাং, 'poignant' এর একটি অর্থ হলো 'heart-rending' (মর্মস্পর্শী)।</p>",
+        },
+        {
+          id: 40,
+          question: "What does the word 'mitigate' mean?",
+          options: {
+            a: "Intensify",
+            b: "Aggravate",
+            c: "Alleviate",
+            d: "Complicate",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'mitigate' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Mitigate:</b> এর অর্থ হলো প্রশমিত করা, কমানো বা উপশম করা। এটি কোনো খারাপ বা অপ্রীতিকর জিনিসের তীব্রতা বা প্রভাব কমানোকে বোঝায়।</li><li><b>Intensify:</b> এর অর্থ হলো তীব্র করা বা বাড়ানো। এটি 'mitigate' এর Antonym।</li><li><b>Aggravate:</b> এর অর্থ হলো আরও খারাপ করা বা বৃদ্ধি করা। এটিও 'mitigate' এর Antonym।</li><li><b>Alleviate:</b> এর অর্থ হলো উপশম করা, কমানো বা সহজ করা। এটি 'mitigate' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Complicate:</b> এর অর্থ হলো জটিল করা।</li></ul></p><p>সুতরাং, 'mitigate' মানে হলো 'Alleviate' (প্রশমিত করা/কমানো)।</p>",
+        },
+        {
+          id: 41,
+          question: "Which pair of the words is synonymous?",
+          options: {
+            a: "Glaring, obvious",
+            b: "Bloated, shrunken",
+            c: "Contingency, impossible",
+            d: "None",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সমার্থক শব্দ জোড়াটি খুঁজে বের করতে বলা হয়েছে।</p><p><ul><li><b>(A) Glaring, obvious:</b></li><ul><li><b>Glaring:</b> এর অর্থ হলো সুস্পষ্ট, চোখে পড়ার মতো বা প্রকট।</li><li><b>Obvious:</b> এর অর্থ হলো স্পষ্ট, সুস্পষ্ট বা প্রতীয়মান।</li><li>এই দুটি শব্দ Synonym বা সমার্থক।</li></ul><li><b>(B) Bloated, shrunken:</b></li><ul><li><b>Bloated:</b> এর অর্থ হলো ফোলা বা স্ফীত।</li><li><b>Shrunken:</b> এর অর্থ হলো সঙ্কুচিত বা ছোট হয়ে যাওয়া।</li><li>এই দুটি শব্দ Antonym বা বিপরীত।</li></ul><li><b>(C) Contingency, impossible:</b></li><ul><li><b>Contingency:</b> এর অর্থ হলো আপৎকালীন অবস্থা বা আকস্মিক ঘটনা।</li><li><b>Impossible:</b> এর অর্থ হলো অসম্ভব।</li><li>এরা Synonym নয়।</li></ul><li><b>(D) None:</b> কোনোটিই নয়।</li></ul></p><p>সুতরাং, সঠিক সমার্থক শব্দ জোড়া হলো 'Glaring, obvious' (সুস্পষ্ট)।</p>",
+        },
+        {
+          id: 42,
+          question: "The synonym of the word 'introvert' is-",
+          options: {
+            a: "easygoing",
+            b: "extrovert",
+            c: "withdrawn",
+            d: "outgoing",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'introvert' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Introvert:</b> এর অর্থ হলো অন্তর্মুখী বা চাপা স্বভাবের ব্যক্তি। এটি এমন ব্যক্তিকে বোঝায় যিনি সাধারণত নিজের চিন্তা ও অনুভূতির মধ্যে সীমাবদ্ধ থাকেন এবং সামাজিক মেলামেশা কম পছন্দ করেন।</li><li><b>Easygoing:</b> এর অর্থ হলো সহজ সরল বা নিশ্চিন্ত।</li><li><b>Extrovert:</b> এর অর্থ হলো বহির্মুখী। এটি 'introvert' এর Antonym।</li><li><b>Withdrawn:</b> এর অর্থ হলো নিভৃত, অন্তর্মুখী বা গুটিয়ে থাকা। এটি 'introvert' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Outgoing:</b> এর অর্থ হলো বহির্মুখী বা মিশুক। এটি 'introvert' এর Antonym।</li></ul></p><p>সুতরাং, 'introvert' এর সমার্থক শব্দ হলো 'withdrawn' (অন্তর্মুখী)।</p>",
+        },
+        {
+          id: 43,
+          question: 'Which is not the meaning of "Myriad"?',
+          options: {
+            a: "Numerous",
+            b: "Diverse",
+            c: "Mythical",
+            d: "Innumerable",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে \"Myriad\" শব্দের কোনটি অর্থ নয় তা জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Myriad:</b> এর অর্থ হলো অসংখ্য, অসংখ্য প্রকারের বা বহুবিধ।</li><li><b>Numerous:</b> এর অর্থ হলো অসংখ্য। এটি 'Myriad' এর একটি Synonym।</li><li><b>Diverse:</b> এর অর্থ হলো বিচিত্র বা বিভিন্ন ধরনের। এটি 'Myriad' এর একটি অর্থ হতে পারে যখন বহুবিধ বোঝায়।</li><li><b>Mythical:</b> এর অর্থ হলো পৌরাণিক বা কাল্পনিক। এটি 'Myriad' এর অর্থ নয়।</li><li><b>Innumerable:</b> এর অর্থ হলো অসংখ্য বা অগণিত। এটি 'Myriad' এর একটি Synonym।</li></ul></p><p>সুতরাং, \"Myriad\" এর অর্থ নয় এমন শব্দ হলো \"Mythical\" (পৌরাণিক)।</p>",
+        },
+        {
+          id: 44,
+          question: "The word 'perpetrate' means to-",
+          options: {
+            a: "commit a crime",
+            b: "protest against injustice",
+            c: "protect from cruelty",
+            d: "perform humanitarian service",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'perpetrate' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Perpetrate:</b> এর অর্থ হলো সংঘটিত করা, করা বা ঘটানো, বিশেষ করে একটি অপরাধ, অন্যায় বা খারাপ কাজ।</li><li><b>Commit a crime:</b> এর অর্থ হলো একটি অপরাধ করা বা সংঘটিত করা। এটি 'perpetrate' এর সঠিক অর্থ।</li><li><b>Protest against injustice:</b> এর অর্থ হলো অন্যায়ের বিরুদ্ধে প্রতিবাদ করা।</li><li><b>Protect from cruelty:</b> এর অর্থ হলো নিষ্ঠুরতা থেকে রক্ষা করা।</li><li><b>Perform humanitarian service:</b> এর অর্থ হলো মানবিক সেবা প্রদান করা।</li></ul></p><p>সুতরাং, 'perpetrate' মানে হলো 'commit a crime' (একটি অপরাধ করা)।</p>",
+        },
+        {
+          id: 45,
+          question: "The meaning of 'prodigious' is-",
+          options: {
+            a: "great in leadership",
+            b: "a person in great pain",
+            c: "exceptionally active",
+            d: "remarkably great in mental or physical ability",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'prodigious' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Prodigious:</b> এর অর্থ হলো অসাধারণ, বিরাট, বিশাল বা বিস্ময়কর। এটি এমন কিছুকে বোঝায় যা আকারে, পরিমাণে, গুণাবলীতে বা দক্ষতায় অত্যন্ত বড় বা চিত্তাকর্ষক।</li><li><b>Great in leadership:</b> এর অর্থ হলো নেতৃত্বে মহান।</li><li><b>A person in great pain:</b> এর অর্থ হলো তীব্র যন্ত্রণায় থাকা ব্যক্তি।</li><li><b>Exceptionally active:</b> এর অর্থ হলো অসাধারণভাবে সক্রিয়।</li><li><b>Remarkably great in mental or physical ability:</b> এর অর্থ হলো মানসিক বা শারীরিক ক্ষমতায় অসাধারণভাবে মহান। এটি 'prodigious' এর একটি সঠিক অর্থ, যা কোনো কিছুতে অসাধারণ বা বিস্ময়কর দক্ষতা বোঝায়।</li></ul></p><p>সুতরাং, 'prodigious' মানে হলো 'remarkably great in mental or physical ability' (মানসিক বা শারীরিক ক্ষমতায় অসাধারণভাবে মহান)।</p>",
+        },
+        {
+          id: 46,
+          question: 'The antonym of "migrant" is-',
+          options: {
+            a: "expatriate",
+            b: "gypsy",
+            c: "native",
+            d: "nomad",
+          },
+          correct: "c",
+          explanation:
+            '<p>এখানে "migrant" শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Migrant:</b> এর অর্থ হলো অভিবাসী, পরিযায়ী বা এক স্থান থেকে অন্য স্থানে গমনকারী ব্যক্তি।</li><li><b>Expatriate:</b> এর অর্থ হলো প্রবাসী। এটি \'migrant\' এর কাছাকাছি অর্থ প্রকাশ করে।</li><li><b>Gypsy:</b> এর অর্থ হলো যাযাবর বা জিপসি। এটিও পরিযায়ী জীবনযাপনকারী একটি গোষ্ঠী।</li><li><b>Native:</b> এর অর্থ হলো স্থানীয়, আদিবাসী বা যে নির্দিষ্ট স্থানে জন্মগ্রহণ করেছে বা বাস করে। এটি "migrant" (স্থান পরিবর্তনকারী) এর সরাসরি বিপরীত।</li><li><b>Nomad:</b> এর অর্থ হলো যাযাবর। এটিও \'migrant\' এর কাছাকাছি অর্থ প্রকাশ করে।</li></ul></p><p>সুতরাং, "migrant" এর বিপরীত শব্দ হলো "native" (স্থানীয়)।</p>',
+        },
+        {
+          id: 47,
+          question: "The synonym of the word 'pacify' is-",
+          options: {
+            a: "cease",
+            b: "exasperate",
+            c: "soothe",
+            d: "enthral",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'pacify' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Pacify:</b> এর অর্থ হলো শান্ত করা, উত্তেজিত অবস্থা কমানো বা উত্তেজিত ব্যক্তিকে শান্ত করা।</li><li><b>Cease:</b> এর অর্থ হলো থামা বা বন্ধ করা।</li><li><b>Exasperate:</b> এর অর্থ হলো বিরক্ত করা বা উত্তেজিত করা। এটি 'pacify' এর Antonym।</li><li><b>Soothe:</b> এর অর্থ হলো শান্ত করা, উপশম করা বা সান্ত্বনা দেওয়া। এটি 'pacify' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Enthral:</b> এর অর্থ হলো মুগ্ধ করা বা মন্ত্রমুগ্ধ করা।</li></ul></p><p>সুতরাং, 'pacify' এর সমার্থক শব্দ হলো 'soothe' (শান্ত করা)।</p>",
+        },
+        {
+          id: 48,
+          question: "The antonym of 'Memory' is-",
+          options: {
+            a: "Memorable",
+            b: "Forgetfulness",
+            c: "Remembrance",
+            d: "Recollection",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Memory' শব্দের Antonym (বিপরীত শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Memory:</b> এর অর্থ হলো স্মৃতি বা স্মরণশক্তি।</li><li><b>Memorable:</b> এর অর্থ হলো স্মরণীয়। এটি একটি Adjective।</li><li><b>Forgetfulness:</b> এর অর্থ হলো বিস্মৃতি বা ভুলে যাওয়ার প্রবণতা। এটি 'Memory' (স্মৃতি) এর সরাসরি বিপরীত।</li><li><b>Remembrance:</b> এর অর্থ হলো স্মরণ বা স্মৃতিচারণ। এটি 'Memory' এর একটি Synonym।</li><li><b>Recollection:</b> এর অর্থ হলো স্মরণ বা স্মৃতিচারণ। এটিও 'Memory' এর একটি Synonym।</li></ul></p><p>সুতরাং, 'Memory' এর বিপরীত শব্দ হলো 'Forgetfulness' (বিস্মৃতি)।</p>",
+        },
+        {
+          id: 49,
+          question: "The synonym for 'panoramic' is-",
+          options: {
+            a: "scenic",
+            b: "narrow",
+            c: "limited",
+            d: "restricted",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'panoramic' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Panoramic:</b> এর অর্থ হলো প্যানোরামিক, সুবিস্তৃত বা বিস্তৃত দৃশ্য। এটি এমন একটি দৃশ্য বা ছবিকে বোঝায় যা একটি বিশাল এলাকা জুড়ে বিস্তৃত।</li><li><b>Scenic:</b> এর অর্থ হলো মনোরম, প্রাকৃতিক দৃশ্যপূর্ণ বা দৃশ্যগত। 'Panoramic' দৃশ্য প্রায়শই 'scenic' হয়। এটি 'panoramic' এর একটি উপযুক্ত সমার্থক শব্দ।</li><li><b>Narrow:</b> এর অর্থ হলো সংকীর্ণ। এটি 'panoramic' এর Antonym।</li><li><b>Limited:</b> এর অর্থ হলো সীমিত। এটি 'panoramic' এর Antonym।</li><li><b>Restricted:</b> এর অর্থ হলো সীমাবদ্ধ। এটি 'panoramic' এর Antonym।</li></ul></p><p>সুতরাং, 'panoramic' এর সমার্থক শব্দ হলো 'scenic' (মনোরম)।</p>",
+        },
+        {
+          id: 50,
+          question: "Identify the correct synonym for the word 'Magnanimous'.",
+          options: {
+            a: "Unkind",
+            b: "Generous",
+            c: "Revengeful",
+            d: "Friendly",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Magnanimous' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Magnanimous:</b> এর অর্থ হলো উদার, মহৎ বা ক্ষমাশীল। এটি এমন কাউকে বোঝায় যিনি উদারচিত্ত এবং অন্যের প্রতি ক্ষোভ পোষণ করেন না।</li><li><b>Unkind:</b> এর অর্থ হলো নির্দয়। এটি 'Magnanimous' এর Antonym।</li><li><b>Generous:</b> এর অর্থ হলো উদার বা দানশীল। এটি 'Magnanimous' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Revengeful:</b> এর অর্থ হলো প্রতিশোধপরায়ণ। এটি 'Magnanimous' এর Antonym।</li><li><b>Friendly:</b> এর অর্থ হলো বন্ধুত্বপূর্ণ।</li></ul></p><p>সুতরাং, 'Magnanimous' এর সমার্থক শব্দ হলো 'Generous' (উদার)।</p>",
+        },
+        {
+          id: 51,
+          question: "What is the meaning of musk?",
+          options: {
+            a: "a form of drama",
+            b: "a face cover",
+            c: "a substance used making perfume",
+            d: "a disguise",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'musk' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Musk:</b> এর অর্থ হলো কস্তুরি। এটি এক ধরনের সুগন্ধি পদার্থ যা পুরুষ কস্তুরি মৃগের গ্রন্থি থেকে পাওয়া যায় এবং সুগন্ধি তৈরিতে ব্যবহৃত হয়।</li><li><b>a form of drama:</b> এর অর্থ হলো নাটকের একটি রূপ।</li><li><b>a face cover:</b> এর অর্থ হলো মুখ ঢাকা।</li><li><b>a substance used making perfume:</b> এর অর্থ হলো সুগন্ধি তৈরিতে ব্যবহৃত একটি পদার্থ। এটি 'musk' এর সঠিক অর্থ।</li><li><b>a disguise:</b> এর অর্থ হলো ছদ্মবেশ।</li></ul></p><p>সুতরাং, 'musk' মানে হলো 'a substance used making perfume' (সুগন্ধি তৈরিতে ব্যবহৃত একটি পদার্থ)।</p>",
+        },
+        {
+          id: 52,
+          question: "The correct synonym for 'Menacing'-",
+          options: {
+            a: "Encouraging",
+            b: "Alarming",
+            c: "Promising",
+            d: "Auspicious",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Menacing' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Menacing:</b> এর অর্থ হলো ভয়ংকর, হুমকিস্বরূপ বা ভীতিকর। এটি এমন কিছুকে বোঝায় যা বিপদ বা হুমকির ইঙ্গিত দেয়।</li><li><b>Encouraging:</b> এর অর্থ হলো উৎসাহব্যঞ্জক। এটি 'Menacing' এর Antonym।</li><li><b>Alarming:</b> এর অর্থ হলো উদ্বেগজনক, ভীতিকর বা বিপদজনক। এটি 'Menacing' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Promising:</b> এর অর্থ হলো আশাব্যঞ্জক বা সম্ভাবনাময়।</li><li><b>Auspicious:</b> এর অর্থ হলো শুভ বা মঙ্গলজনক।</li></ul></p><p>সুতরাং, 'Menacing' এর সমার্থক শব্দ হলো 'Alarming' (উদ্বেগজনক/ভীতিকর)।</p>",
+        },
+        {
+          id: 53,
+          question: "Omnipotent is a synonym of-",
+          options: {
+            a: "Feeble",
+            b: "Supreme",
+            c: "Impotent",
+            d: "Vulnerable",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Omnipotent' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Omnipotent:</b> এর অর্থ হলো সর্বশক্তিমান বা অসীম ক্ষমতাসম্পন্ন।</li><li><b>Feeble:</b> এর অর্থ হলো দুর্বল বা শক্তিহীন। এটি 'Omnipotent' এর Antonym।</li><li><b>Supreme:</b> এর অর্থ হলো সর্বোচ্চ, সর্বশ্রেষ্ঠ বা অসীম ক্ষমতাশালী। এটি 'Omnipotent' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Impotent:</b> এর অর্থ হলো শক্তিহীন বা অক্ষম। এটি 'Omnipotent' এর Antonym।</li><li><b>Vulnerable:</b> এর অর্থ হলো দুর্বল বা অরক্ষিত।</li></ul></p><p>সুতরাং, 'Omnipotent' এর সমার্থক শব্দ হলো 'Supreme' (সর্বোচ্চ/সর্বশক্তিমান)।</p>",
+        },
+        {
+          id: 54,
+          question: 'The word "Precedence" means -',
+          options: {
+            a: "to adjust",
+            b: "priority",
+            c: "to interest",
+            d: "to walks",
+          },
+          correct: "b",
+          explanation:
+            '<p>এখানে "Precedence" শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Precedence:</b> এর অর্থ হলো অগ্রাধিকার, অগ্রগণ্যতা বা পূর্বে আসার অধিকার। এটি এমন কিছুকে বোঝায় যা অন্য কিছুর আগে বিবেচনা করা বা স্থান দেওয়া উচিত।</li><li><b>To adjust:</b> এর অর্থ হলো সামঞ্জস্য করা।</li><li><b>Priority:</b> এর অর্থ হলো অগ্রাধিকার বা অগ্রগণ্যতা। এটি "Precedence" এর একটি সঠিক অর্থ।</li><li><b>To interest:</b> এর অর্থ হলো আগ্রহী করা।</li><li><b>To walks:</b> এর অর্থ হলো হাঁটা।</li></ul></p><p>সুতরাং, "Precedence" মানে হলো "priority" (অগ্রাধিকার)।</p>',
+        },
+        {
+          id: 55,
+          question: "The meaning of the word 'Obese' is -",
+          options: {
+            a: "Very fat",
+            b: "Ugly",
+            c: "Tardy",
+            d: "Obnoxious",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'Obese' শব্দের অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Obese:</b> এর অর্থ হলো স্থূলকায়, অতিশয় মোটা বা মেদবহুল। এটি এমন ব্যক্তিকে বোঝায় যার শরীরে অতিরিক্ত চর্বি জমে স্বাস্থ্য ঝুঁকি তৈরি হয়েছে।</li><li><b>Very fat:</b> এর অর্থ হলো খুব মোটা। এটি 'Obese' এর সঠিক অর্থ।</li><li><b>Ugly:</b> এর অর্থ হলো কুৎসিত।</li><li><b>Tardy:</b> এর অর্থ হলো বিলম্বিত বা ধীরগতি।</li><li><b>Obnoxious:</b> এর অর্থ হলো আপত্তিকর বা বিরক্তিকর।</li></ul></p><p>সুতরাং, 'Obese' মানে হলো 'Very fat' (খুব মোটা)।</p>",
+        },
+        {
+          id: 56,
+          question: "'Prior to' means -",
+          options: {
+            a: "After",
+            b: "Before",
+            c: "Immediately",
+            d: "During the period of",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Prior to' Phrase-টির অর্থ জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Prior to:</b> এর অর্থ হলো পূর্বে, আগে বা কোনো কিছুর আগে।</li><li><b>After:</b> এর অর্থ হলো পরে। এটি 'Prior to' এর Antonym।</li><li><b>Before:</b> এর অর্থ হলো পূর্বে বা আগে। এটি 'Prior to' এর সঠিক অর্থ।</li><li><b>Immediately:</b> এর অর্থ হলো অবিলম্বে বা তাৎক্ষণিকভাবে।</li><li><b>During the period of:</b> এর অর্থ হলো সময়কালে।</li></ul></p><p>সুতরাং, 'Prior to' মানে হলো 'Before' (পূর্বে)।</p>",
+        },
+        {
+          id: 57,
+          question: "The synonym for 'Obdurate'-",
+          options: {
+            a: "Deceitful",
+            b: "Stubborn",
+            c: "Sly",
+            d: "Swindler",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'Obdurate' শব্দের Synonym (সমার্থক শব্দ) জানতে চাওয়া হয়েছে।</p><p><ul><li><b>Obdurate:</b> এর অর্থ হলো অনমনীয়, একগুঁয়ে, কঠোর বা অটল। এটি এমন কাউকে বোঝায় যিনি নিজের মতামত বা অবস্থান থেকে সরতে নারাজ।</li><li><b>Deceitful:</b> এর অর্থ হলো প্রতারণাপূর্ণ।</li><li><b>Stubborn:</b> এর অর্থ হলো একগুঁয়ে, জেদি বা অনমনীয়। এটি 'Obdurate' এর একটি সঠিক সমার্থক শব্দ।</li><li><b>Sly:</b> এর অর্থ হলো ধূর্ত বা শঠ।</li><li><b>Swindler:</b> এর অর্থ হলো প্রতারক বা ঠকবাজ।</li></ul></p><p>সুতরাং, 'Obdurate' এর সমার্থক শব্দ হলো 'Stubborn' (একগুঁয়ে)।</p>",
+        },
+        {
+          id: 58,
+          question: "Parcel means-",
+          options: {
+            a: "Quarrel",
+            b: "Piece of land",
+            c: "Postage",
+            d: "Unobstructed view",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'Parcel' শব্দের অর্থ জানতে চাওয়া হয়েছে। 'Parcel' এর একাধিক অর্থ থাকতে পারে।</p><p><ul><li><b>Parcel:</b></li><ol><li><b>চিঠি বা ডাক যোগে পাঠানো জিনিস:</b> সাধারণত একটি মোড়ানো প্যাকেট বা ছোট বস্তুকে বোঝায় যা ডাকযোগে বা কুরিয়ার সার্ভিসের মাধ্যমে পাঠানো হয়। এই অর্থে, এটি 'Postage' (ডাক খরচ বা ডাক ব্যবস্থা) এর সাথে সম্পর্কিত।</li><li><b>জমির অংশ:</b> 'A parcel of land' বলতে একখণ্ড জমি বোঝায়।</li></ol><li><b>Quarrel:</b> এর অর্থ হলো ঝগড়া।</li><li><b>Piece of land:</b> এর অর্থ হলো একখণ্ড জমি। এটি 'Parcel' এর একটি অর্থ হতে পারে।</li><li><b>Postage:</b> এর অর্থ হলো ডাক খরচ বা ডাক ব্যবস্থা। যদিও 'Postage' সরাসরি 'Parcel' এর অর্থ নয়, তবে 'Parcel' প্রায়শই ডাক পরিষেবার সাথে সম্পর্কিত একটি জিনিস হিসেবে ব্যবহৃত হয়, এবং প্রদত্ত অপশনগুলোর মধ্যে এটিই সবচেয়ে প্রাসঙ্গিক। একটি পার্সেল পাঠাতে 'Postage' লাগে, বা 'Parcel' নিজেই পোস্টের একটি অংশ।</li><li><b>Unobstructed view:</b> এর অর্থ হলো বাধাহীন দৃশ্য।</li></ul></p><p>প্রদত্ত বিকল্পগুলির মধ্যে, 'Parcel' এর সবচেয়ে সাধারণ বা প্রাসঙ্গিক ব্যবহার 'Postage' (ডাক) এর সাথে সম্পর্কিত। যখন 'parcel' একটি বস্তু বোঝায় যা পাঠানো হয়, তখন 'postage' সেই পাঠানোর প্রক্রিয়া বা খরচকে বোঝায়। তবে, যদি 'parcel' এর অন্য অর্থ 'piece of land' অপশনে থাকত, তাহলে সেটিও সঠিক হতে পারত। এখানে 'Postage' কে সঠিক উত্তর হিসেবে ধরা হয়েছে, কারণ 'parcel' শব্দটি সাধারণত ডাক পরিষেবার সাথে যুক্ত।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
